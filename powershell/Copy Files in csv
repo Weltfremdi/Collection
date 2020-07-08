@@ -1,0 +1,46 @@
+###############################
+
+##########functions
+
+function Check-Folder([string]$path, [switch]$create){
+    $exists = Test-Path $path
+
+    if(!$exists -and $create){
+        #create the directory because it doesn't exist
+        mkdir $path | out-null
+        $exists = Test-Path $path
+    }
+    return $exists
+}
+
+$sourcedir = 'C:\Users\hendr\Desktop\powershell\copytest\'
+$targetdir = 'C:\Users\hendr\Desktop\powershell\pastetest\'
+$importfile = Import-Csv "C:\Users\hendr\Desktop\powershell\import2.csv"
+
+$files = dir 'C:\Users\hendr\Desktop\powershell\copytest\' -recurse -force | select Fullname
+
+foreach ($line in $importfile){
+    #create absolute path because relative is a bitch
+    $sourcepath = [IO.Path]::Combine($sourcedir, $line.datacolumn)
+    $targetpath = [IO.Path]::Combine($targetdir, $line.datacolumn)
+
+    #SOURCE CHECK
+    $sourceexists = Test-Path $sourcepath
+     if (!$sourceexists){
+        Write-Host "The source file is not found. Script can not continue."
+        Exit
+    }
+
+    #TARGET CHECK AND CREATE FOLDER IF NOT THERE AND QUIT IF NOT POSSIBLE
+    $targetpathexists = Check-Folder $targetpath -create
+    if (!$targetpathexists){
+        Write-Host "The destination directory can't be created."
+        Exit
+    }
+
+    #real copy time lol
+    Copy-Item $sourcepath $targetpath
+}
+
+
+###################################
