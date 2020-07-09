@@ -13,34 +13,44 @@ function Check-Folder([string]$path, [switch]$create){
     return $exists
 }
 
-$sourcedir = 'C:\Users\hendr\Desktop\powershell\copytest\'
-$targetdir = 'C:\Users\hendr\Desktop\powershell\pastetest\'
-$importfile = Import-Csv "C:\Users\hendr\Desktop\powershell\import2.csv"
+#########configuration
 
-$files = dir 'C:\Users\hendr\Desktop\powershell\copytest\' -recurse -force | select Fullname
+$sourcedir = 'C:\Users\hendr\Desktop\work\images'
+$targetdir = 'C:\Users\hendr\Desktop\work\images-final'
+$importfile = Import-Csv "C:\Users\hendr\Desktop\work\importy.csv"
+$files = dir 'C:\Users\hendr\Desktop\work\images\' -recurse -force | select Fullname
+
+########main
 
 foreach ($line in $importfile){
     #create absolute path because relative is a bitch
     $sourcepath = [IO.Path]::Combine($sourcedir, $line.datacolumn)
-    $targetpath = [IO.Path]::Combine($targetdir, $line.datacolumn)
+    $targetfile = [IO.Path]::Combine($targetdir, $line.datacolumn)
+    $targetpath = Split-Path -Path $targetfile
 
     #SOURCE CHECK
     $sourceexists = Test-Path $sourcepath
      if (!$sourceexists){
-        Write-Host "The source file is not found. Script can not continue."
-        Exit
+        Write-Host "The source file is not found. Script can not continue. ($sourcepath)"
+        #exit
+        Add-Content C:\Users\hendr\Desktop\work\not-found.txt $sourcepath
+
     }
 
-    #TARGET CHECK AND CREATE FOLDER IF NOT THERE AND QUIT IF NOT POSSIBLE
-    $targetpathexists = Check-Folder $targetpath -create
-    if (!$targetpathexists){
-        Write-Host "The destination directory can't be created."
-        Exit
-    }
+    if ($sourceexists){
+        $targetpathexists = Check-Folder $targetpath -create
+        if (!$targetpathexists){
+            #Write-Host "The destination directory can't be created."
+            Exit
+        }
 
-    #real copy time lol
-    Copy-Item $sourcepath $targetpath
+        #real copy time lol
+        Write-Host "----"
+        Write-Host $sourcepath
+        Write-Host "WRITING TO"
+        Write-Host $targetfile
+        Write-Host "----"
+        Copy-Item $sourcepath $targetfile
+    }
 }
-
-
 ###################################
