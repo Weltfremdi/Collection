@@ -1,0 +1,96 @@
+###########################################
+
+########functions
+function Check-Folder([string]$path, [switch]$create){
+    $exists = Test-Path $path
+
+    if(!$exists -and $create){
+        #create the directory because it doesn't exist
+        mkdir $path | out-null
+        $exists = Test-Path $path
+    }
+    return $exists
+}
+
+########parameters
+$sourcedir = "C:\Users\hendr\Desktop\work\images-source"
+$targetdir = "C:\Users\hendr\Desktop\work\images-final"
+$source = Get-ChildItem C:\Users\hendr\Desktop\work\images-source -Recurse | where {!$_.PSIsContainer}
+$filey = "C:\Users\hendr\Desktop\work\renamed.csv"
+$importfile = Import-Csv $filey -header "oldDirectory", "oldName", "newName"
+
+#######main
+foreach($file in $source)
+{
+    Write-Host "vvvvvvvv"
+    $sourcefile = $file.FullName
+    $sourcepath = Split-Path -Path $sourcefile
+    $culture = (get-item $sourcefile).Directory.Parent.Name
+    $basename = [System.IO.Path]::GetFileNameWithoutExtension($file)
+    $extension = [System.IO.Path]::GetExtension($file)
+
+    Write-Host "source: " $sourcefile
+    Write-Host "sourcepath: " $sourcepath
+
+
+    if ($file.FullName.Contains("\1_1\") -or $file.FullName.Contains("\banner\"))
+    {
+        ###single standard breite bilder
+        $targetfile = [IO.Path]::Combine($targetdir, $culture, "single-column", $file.name)
+        $targetpath = Split-Path -Path $targetfile
+
+    }
+    else
+    {
+        ###multi column bilder why am i copying all of this there is prob a better way 
+        $targetfile = [IO.Path]::Combine($targetdir, $culture, "multi-column", $file.name)
+        $targetpath = Split-Path -Path $targetfile
+    }
+
+    ###path
+    $targetpathexists = Check-Folder $targetpath -create
+    if (!$targetpathexists){
+        Write-Host "The destination directory is not found. Script can not continue."
+        Exit
+    }
+
+    ###file already there, write in csv if not
+    $i = 0 
+    $duplicatefile = $FALSE
+
+    while (Test-Path $Targetfile){
+    write-host "IMMER TRUE BUDDY"
+    $i += 1
+    $duplicatefile = $TRUE
+    $newname = $basename + $i + $extension
+    $targetfile = [IO.Path]::Combine($targetpath, $newname)
+    write-host "IMMER TRUE BUDDY"
+    }
+
+    if ($i -ge 1){
+    write-host "IMMER TRUE BUDDY2 i= " $i
+    $oldDirectory = $sourcepath
+    $oldName = $basename + $extension
+    $newName = $basename + $i + $extension
+    $NewLine = "{0},{1},{2}" -f $OldDirectory,$oldName,$newName
+    $NewLine | add-content -path $filey
+    write-host "IMMER TRUE BUDDY2 i= " $i   
+    }
+
+    ###copy magic taking place
+    Copy-Item -Path $sourcefile -Destination $targetfile -verbose -Force
+
+    ###debug
+    write-host "targetfile:" $targetfile
+    write-host "targetpath:" $targetpath
+
+    Write-Host "^^^^^^^^"
+}
+
+
+####################################################
+
+
+
+#$targetpath = [IO.Path]::Combine($targetdir, "single-column", $file.name)
+#$targetpath = Split-Path -Path $targetfile
